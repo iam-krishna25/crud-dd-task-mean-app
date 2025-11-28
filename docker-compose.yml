@@ -1,0 +1,36 @@
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/appdb
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+networks:
+  mern_network:
+    driver: bridge 
+
+volumes:
+  mongo-data:
+    driver: local
+
+
+

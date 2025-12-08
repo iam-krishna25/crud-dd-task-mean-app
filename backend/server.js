@@ -1,26 +1,17 @@
 const express = require("express");
-const cors = require("cors"); // keep if you need cross-origin requests
+//const cors = require("cors");
 
 const app = express();
 
-// optional: enable CORS (uncomment if frontend calls backend from another origin)
-// app.use(cors());
+// parse requests of content-type - application/json
 app.use(express.json());
+
+// parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
-// recommended: silence the strictQuery deprecation warning and be explicit
-const mongoose = require("mongoose");
-mongoose.set("strictQuery", false);
-
-// Read DB URL from environment (works inside Docker)
-// Fallback to a sensible container-aware default (service name 'mongo')
-const MONGO_URI = process.env.MONGO_URI || "mongodb://mongo:27017/appdb";
-
 const db = require("./app/models");
-
-// connect using environment variable
 db.mongoose
-  .connect(MONGO_URI, {
+  .connect(db.url, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
@@ -28,9 +19,8 @@ db.mongoose
     console.log("Connected to the database!");
   })
   .catch(err => {
-    console.error("Cannot connect to the database!", err);
-    // don't exit immediately in production; here we keep behavior as before
-    process.exit(1);
+    console.log("Cannot connect to the database!", err);
+    process.exit();
   });
 
 // simple route
@@ -38,12 +28,10 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to Test application." });
 });
 
-// make sure the route filename is correct in your project
-// original used "./app/routes/turorial.routes" (typo?). Keep it if file exists.
 require("./app/routes/turorial.routes")(app);
 
-// set port (use env PORT set by docker-compose), default to 4000 to match compose
-const PORT = process.env.PORT || 4000;
+// set port, listen for requests
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });

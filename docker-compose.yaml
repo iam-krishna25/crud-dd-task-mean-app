@@ -22,9 +22,9 @@ services:
     container_name: backend
     restart: always
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
-      PORT: 8080
+      PORT: 8081
       MONGODB_URI: "mongodb://admin:password@mongodb:27017/mean_db?authSource=admin"
     depends_on:
       - mongodb
@@ -49,4 +49,5 @@ volumes:
 
 networks:
   mean-network:
+
     driver: bridge

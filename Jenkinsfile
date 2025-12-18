@@ -5,16 +5,10 @@ pipeline {
         githubPush()
     }
 
-    tools {
-        nodejs 'node18'
-    }
-
     environment {
-        // Docker Hub images
         FRONTEND_IMAGE = "shiva425/mean-frontend"
         BACKEND_IMAGE  = "shiva425/mean-backend"
 
-        // EC2 details
         AWS_USER = "ubuntu"
         AWS_IP   = "54.172.37.246"
     }
@@ -27,7 +21,7 @@ pipeline {
                     url: 'https://github.com/iam-krishna25/crud-dd-task-mean-app.git'
 
                 script {
-                    env.IMAGE_TAG = sh(
+                    IMAGE_TAG = sh(
                         script: "git rev-parse --short HEAD",
                         returnStdout: true
                     ).trim()
@@ -37,28 +31,38 @@ pipeline {
             }
         }
 
-        stage('Build Backend Image') {
+        stage('Docker Login') {
             steps {
-                sh """
-                cd backend
-                docker buildx build \
-                    --platform linux/amd64 \
-                    -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
-                    -t ${BACKEND_IMAGE}:latest \
-                    --push .
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-cred',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
             }
         }
 
-        stage('Build Frontend Image') {
+        stage('Build & Push Backend Image') {
             steps {
-                sh """
-                cd frontend
-                docker buildx build \
-                    --platform linux/amd64 \
-                    -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                    -t ${FRONTEND_IMAGE}:latest \
-                    --push .
+                sh '''
+                    docker build -t ${BACKEND_IMAGE}:${IMAGE_TAG} ./backend
+                    docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
+                    docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
+                    docker push ${BACKEND_IMAGE}:latest
+                '''
+            }
+        }
+
+        stage('Build & Push Frontend Image') {
+            steps {
+                sh '''
+                    docker build -t ${FRONTEND_IMAGE}:${IMAGE_TAG} ./frontend
+                    docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
+                    docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
+                    docker push ${FRONTEND_IMAGE}:latest
                 '''
             }
         }
@@ -73,12 +77,7 @@ pipeline {
                 ]) {
                     sh '''
                         ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ${AWS_USER}@${AWS_IP} '
-                            set -e
                             cd /home/ubuntu/crud-dd-task-mean-app
-
-                            sed -i "s|${FRONTEND_IMAGE}:.*|${FRONTEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
-                            sed -i "s|${BACKEND_IMAGE}:.*|${BACKEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
-                            
                             docker compose pull
                             docker compose down
                             docker compose up -d
@@ -91,7 +90,7 @@ pipeline {
 
     post {
         success {
-            echo "CI/CD Pipeline completed successfully"
+            echo " CI/CD Pipeline completed successfully"
         }
         failure {
             echo " CI/CD Pipeline failed"

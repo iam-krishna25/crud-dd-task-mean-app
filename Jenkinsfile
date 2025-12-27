@@ -10,7 +10,7 @@ pipeline {
         BACKEND_IMAGE  = "shiva425/mean-backend"
 
         AWS_USER = "ubuntu"
-        AWS_IP   = "54.172.37.246"
+        AWS_IP   = "52.204.239.57"
     }
 
     stages {
@@ -97,3 +97,4 @@ pipeline {
         }
     }
 }
+

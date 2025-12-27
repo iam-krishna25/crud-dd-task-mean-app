@@ -1,12 +1,8 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:6.0
     container_name: mongodb
     restart: always
-    ports:
-      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
@@ -16,25 +12,21 @@ services:
       - mean-network
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: shiva425/mean-backend:latest
     container_name: backend
     restart: always
     ports:
       - "8081:8081"
     environment:
       PORT: 8081
-      MONGODB_URI: "mongodb://admin:password@mongodb:27017/mean_db?authSource=admin"
+      MONGODB_URI: mongodb://admin:password@mongodb:27017/mean_db?authSource=admin
     depends_on:
       - mongodb
     networks:
       - mean-network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: shiva425/mean-frontend:latest
     container_name: frontend
     restart: always
     ports:
@@ -49,5 +41,4 @@ volumes:
 
 networks:
   mean-network:
-
     driver: bridge

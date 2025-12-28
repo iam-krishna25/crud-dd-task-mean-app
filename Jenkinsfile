@@ -12,7 +12,7 @@ pipeline {
 
         // EC2 details
         AWS_USER = "ubuntu"
-        AWS_IP   = "34.230.82.239"
+        AWS_IP   = "13.221.91.148"
     }
 
     stages {
@@ -71,25 +71,41 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'aws-ssh-key',
-                        keyFileVariable: 'SSH_KEY'
-                    )
-                ]) {
-                    sh """
-                    ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ${AWS_USER}@${AWS_IP} '
-                        set -e
-                        cd /home/ubuntu/crud-dd-task-mean-app
+                script {
+                    try {
+                        withCredentials([
+                            sshUserPrivateKey(
+                                credentialsId: 'aws-ssh-key',
+                                keyFileVariable: 'SSH_KEY'
+                            )
+                        ]) {
+                            sh '''
+                                ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ${AWS_USER}@${AWS_IP} << 'EOF'
+                                set -e
+                                cd /home/ubuntu/crud-dd-task-mean-app
 
-                        sed -i "s|${FRONTEND_IMAGE}:.*|${FRONTEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
-                        sed -i "s|${BACKEND_IMAGE}:.*|${BACKEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
+                                echo "Updating docker-compose image tags..."
+                                sed -i "s|${FRONTEND_IMAGE}:.*|${FRONTEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
+                                sed -i "s|${BACKEND_IMAGE}:.*|${BACKEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
 
-                        docker compose pull
-                        docker compose down || true
-                        docker compose up -d
-                    '
-                    """
+                                echo "Pulling latest images..."
+                                docker compose pull
+
+                                echo "Restarting containers..."
+                                docker compose down || true
+                                docker compose up -d
+                                EOF
+                            '''
+                        }
+
+                        echo "🚀 Deployment to EC2 successful"
+
+                    } catch (err) {
+                        echo "❌ Deployment to EC2 failed"
+                        echo "Reason: ${err}"
+                        currentBuild.result = 'FAILURE'
+                        throw err
+                    }
                 }
             }
         }
@@ -104,8 +120,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-

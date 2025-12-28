@@ -12,7 +12,7 @@ pipeline {
 
         // EC2 details
         AWS_USER = "ubuntu"
-        AWS_IP   = "50.19.133.21"
+        AWS_IP   = "54.91.12.203"
     }
 
     stages {
@@ -82,8 +82,11 @@ pipeline {
                         set -e
                         cd /home/ubuntu/crud-dd-task-mean-app
 
+                        sed -i "s|${FRONTEND_IMAGE}:.*|${FRONTEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
+                                sed -i "s|${BACKEND_IMAGE}:.*|${BACKEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
+
                         docker compose pull
-                        docker compose down
+                        docker compose down || true
                         docker compose up -d
                     '
                     """
@@ -101,4 +104,5 @@ pipeline {
         }
     }
 }
+
 

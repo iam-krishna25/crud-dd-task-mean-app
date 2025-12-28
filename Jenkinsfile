@@ -83,7 +83,7 @@ pipeline {
                         cd /home/ubuntu/crud-dd-task-mean-app
 
                         sed -i "s|${FRONTEND_IMAGE}:.*|${FRONTEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
-                                sed -i "s|${BACKEND_IMAGE}:.*|${BACKEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
+                        sed -i "s|${BACKEND_IMAGE}:.*|${BACKEND_IMAGE}:${IMAGE_TAG}|" docker-compose.yaml
 
                         docker compose pull
                         docker compose down || true
@@ -104,5 +104,6 @@ pipeline {
         }
     }
 }
+
 
 

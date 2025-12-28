@@ -12,7 +12,7 @@ pipeline {
 
         // EC2 details
         AWS_USER = "ubuntu"
-        AWS_IP   = "54.87.36.97"
+        AWS_IP   = "34.230.82.239"
     }
 
     stages {
@@ -104,6 +104,7 @@ pipeline {
         }
     }
 }
+
 
 
 
